@@ -275,6 +275,7 @@ class Layer(object):
                           'trainable',
                           'weights',
                           'input_dtype',  # legacy
+                          'learning_rate'
                           }
         for kwarg in kwargs:
             if kwarg not in allowed_kwargs:
@@ -311,6 +312,11 @@ class Layer(object):
             self._initial_weights = kwargs['weights']
         else:
             self._initial_weights = None
+
+        if 'learning_rate' in kwargs:
+            self.learning_rate = kwargs['learning_rate']
+        else:
+            self.learning_rate = None
 
     @property
     def losses(self):
@@ -1948,6 +1954,18 @@ class Container(Layer):
         for layer in self.layers:
             weights += layer.trainable_weights
         return weights
+
+    @property
+    def learning_rates(self):
+        if not self.trainable:
+            return []
+        learning_rates = []
+        for layer in self.layers:
+            if hasattr(layer, 'learning_rate'):
+                learning_rates.append(layer.learning_rate)
+            else:
+                learning_rates.append(None)
+        return learning_rates
 
     @property
     def non_trainable_weights(self):

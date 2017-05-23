@@ -992,6 +992,7 @@ class Model(Container):
 
         # Collected trainable weights and sort them deterministically.
         trainable_weights = self.trainable_weights
+
         # Sort weights by name.
         if trainable_weights:
             if K.backend() == 'theano':
@@ -1011,7 +1012,9 @@ class Model(Container):
             training_updates = self.optimizer.get_updates(
                 self._collected_trainable_weights,
                 self.constraints,
-                self.total_loss)
+                self.total_loss,
+                learning_rates=self.learning_rates)
+            #[self.learning_rates]
             updates = self.updates + training_updates
             # Gets loss and metrics. Updates weights at each call.
             self.train_function = K.function(inputs,

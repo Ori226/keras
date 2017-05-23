@@ -193,7 +193,7 @@ class RMSprop(Optimizer):
         self.initial_decay = decay
         self.iterations = K.variable(0., name='iterations')
 
-    def get_updates(self, params, constraints, loss):
+    def get_updates(self, params, constraints, loss, **kwargs):
         grads = self.get_gradients(loss, params)
         shapes = [K.get_variable_shape(p) for p in params]
         accumulators = [K.zeros(shape) for shape in shapes]
@@ -226,6 +226,35 @@ class RMSprop(Optimizer):
         base_config = super(RMSprop, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
+class MyRMSprop(RMSprop):
+    def get_updates(self, params, constraints, loss, learning_rates):
+        grads = self.get_gradients(loss, params)
+        shapes = [K.get_variable_shape(p) for p in params]
+        accumulators = [K.zeros(shape) for shape in shapes]
+        self.weights = accumulators
+        self.updates = []
+
+        lr = self.lr
+        if self.initial_decay > 0:
+            lr *= (1. / (1. + self.decay * self.iterations))
+            self.updates.append(K.update_add(self.iterations, 1))
+
+        for p, g, a,mlr in zip(params, grads, accumulators, learning_rates):
+            # update accumulator
+            new_a = self.rho * a + (1. - self.rho) * K.square(g)
+            self.updates.append(K.update(a, new_a))
+            if mlr is None:
+                actual_mlr = 1.0
+            else:
+                actual_mlr = mlr
+            new_p = p - actual_mlr*lr * g / (K.sqrt(new_a) + self.epsilon)
+
+            # apply constraints
+            if p in constraints:
+                c = constraints[p]
+                new_p = c(new_p)
+            self.updates.append(K.update(p, new_p))
+        return self.updates
 
 class Adagrad(Optimizer):
     """Adagrad optimizer.
@@ -583,7 +612,7 @@ class TFOptimizer(Optimizer):
         self.iterations = K.variable(0., name='iterations')
         self.updates = []
 
-    def get_updates(self, params, constraints, loss):
+    def get_updates(self, params, constraints, loss,**kwargs):
         if constraints:
             raise ValueError('TF optimizers do not support '
                              'weights constraints. Either remove '

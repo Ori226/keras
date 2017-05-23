@@ -11,8 +11,7 @@ import keras
 from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Dense, Dropout
-from keras.optimizers import RMSprop
-
+from keras.optimizers import RMSprop, MyRMSprop
 
 batch_size = 128
 num_classes = 10
@@ -39,12 +38,12 @@ model.add(Dense(512, activation='relu', input_shape=(784,)))
 model.add(Dropout(0.2))
 model.add(Dense(512, activation='relu'))
 model.add(Dropout(0.2))
-model.add(Dense(10, activation='softmax'))
+model.add(Dense(10, activation='softmax', learning_rate=2))
 
 model.summary()
 
 model.compile(loss='categorical_crossentropy',
-              optimizer=RMSprop(),
+              optimizer=MyRMSprop(),
               metrics=['accuracy'])
 
 history = model.fit(x_train, y_train,
