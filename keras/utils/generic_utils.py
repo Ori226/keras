@@ -132,18 +132,20 @@ def deserialize_keras_object(identifier, module_objects=None,
                 raise ValueError('Unknown ' + printable_module_name +
                                  ': ' + class_name)
         if hasattr(cls, 'from_config'):
-            arg_spec = inspect.getargspec(cls.from_config)
-            if 'custom_objects' in arg_spec.args:
-                custom_objects = custom_objects or {}
+            custom_objects = custom_objects or {}
+            if has_arg(cls.from_config, 'custom_objects'):
                 return cls.from_config(config['config'],
                                        custom_objects=dict(list(_GLOBAL_CUSTOM_OBJECTS.items()) +
                                                            list(custom_objects.items())))
-            return cls.from_config(config['config'])
+            with CustomObjectScope(custom_objects):
+                return cls.from_config(config['config'])
         else:
             # Then `cls` may be a function returning a class.
             # in this case by convention `config` holds
             # the kwargs of the function.
-            return cls(**config['config'])
+            custom_objects = custom_objects or {}
+            with CustomObjectScope(custom_objects):
+                return cls(**config['config'])
     elif isinstance(identifier, six.string_types):
         function_name = identifier
         if custom_objects and function_name in custom_objects:
@@ -202,6 +204,48 @@ def func_load(code, defaults=None, closure=None, globs=None):
                                      name=code.co_name,
                                      argdefs=defaults,
                                      closure=closure)
+
+
+def has_arg(fn, name, accept_all=False):
+    """Checks if a callable accepts a given keyword argument.
+
+    For Python 2, checks if there is an argument with the given name.
+
+    For Python 3, checks if there is an argument with the given name, and
+    also whether this argument can be called with a keyword (i.e. if it is
+    not a positional-only argument).
+
+    # Arguments
+        fn: Callable to inspect.
+        name: Check if `fn` can be called with `name` as a keyword argument.
+        accept_all: What to return if there is no parameter called `name`
+                    but the function accepts a `**kwargs` argument.
+
+    # Returns
+        bool, whether `fn` accepts a `name` keyword argument.
+    """
+    if sys.version_info < (3,):
+        arg_spec = inspect.getargspec(fn)
+        if accept_all and arg_spec.keywords is not None:
+            return True
+        return (name in arg_spec.args)
+    elif sys.version_info < (3, 3):
+        arg_spec = inspect.getfullargspec(fn)
+        if accept_all and arg_spec.varkw is not None:
+            return True
+        return (name in arg_spec.args or
+                name in arg_spec.kwonlyargs)
+    else:
+        signature = inspect.signature(fn)
+        parameter = signature.parameters.get(name)
+        if parameter is None:
+            if accept_all:
+                for param in signature.parameters.values():
+                    if param.kind == inspect.Parameter.VAR_KEYWORD:
+                        return True
+            return False
+        return (parameter.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                                   inspect.Parameter.KEYWORD_ONLY))
 
 
 class Progbar(object):
@@ -285,7 +329,7 @@ class Progbar(object):
             for k in self.unique_values:
                 info += ' - %s:' % k
                 if isinstance(self.sum_values[k], list):
-                    avg = self.sum_values[k][0] / max(1, self.sum_values[k][1])
+                    avg = np.mean(self.sum_values[k][0] / max(1, self.sum_values[k][1]))
                     if abs(avg) > 1e-3:
                         info += ' %.4f' % avg
                     else:
@@ -308,7 +352,7 @@ class Progbar(object):
                 info = '%ds' % (now - self.start)
                 for k in self.unique_values:
                     info += ' - %s:' % k
-                    avg = self.sum_values[k][0] / max(1, self.sum_values[k][1])
+                    avg = np.mean(self.sum_values[k][0] / max(1, self.sum_values[k][1]))
                     if avg > 1e-3:
                         info += ' %.4f' % avg
                     else:

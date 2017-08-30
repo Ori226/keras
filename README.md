@@ -1,11 +1,11 @@
-# Keras: Deep Learning library for TensorFlow and Theano
+﻿# Keras: Deep Learning for Python
 
 [![Build Status](https://travis-ci.org/fchollet/keras.svg?branch=master)](https://travis-ci.org/fchollet/keras)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/fchollet/keras/blob/master/LICENSE)
 
 ## You have just found Keras.
 
-Keras is a high-level neural networks API, written in Python and capable of running on top of either [TensorFlow](https://github.com/tensorflow/tensorflow) or [Theano](https://github.com/Theano/Theano). It was developed with a focus on enabling fast experimentation. *Being able to go from idea to result with the least possible delay is key to doing good research.*
+Keras is a high-level neural networks API, written in Python and capable of running on top of [TensorFlow](https://github.com/tensorflow/tensorflow), [CNTK](https://github.com/Microsoft/cntk), or [Theano](https://github.com/Theano/Theano). It was developed with a focus on enabling fast experimentation. *Being able to go from idea to result with the least possible delay is key to doing good research.*
 
 Use Keras if you need a deep learning library that:
 
@@ -112,38 +112,50 @@ In the [examples folder](https://github.com/fchollet/keras/tree/master/examples)
 
 ## Installation
 
-Keras uses the following dependencies:
+Before installing Keras, please install one of its backend engines: TensorFlow, Theano, or CNTK. We recommend the TensorFlow backend.
 
-- numpy, scipy
-- yaml
-- HDF5 and h5py (optional, required if you use model saving/loading functions)
-- Optional but recommended if you use CNNs: cuDNN.
+- [TensorFlow installation instructions](https://www.tensorflow.org/install/).
+- [Theano installation instructions](http://deeplearning.net/software/theano/install.html#install).
+- [CNTK installation instructions](https://docs.microsoft.com/en-us/cognitive-toolkit/setup-cntk-on-your-machine).
 
+You may also consider installing the following **optional dependencies**:
 
-*When using the TensorFlow backend:*
+- cuDNN (recommended if you plan on running Keras on GPU).
+- HDF5 and h5py (required if you plan on saving Keras models to disk).
+- graphviz and pydot (used by [visualization utilities](https://keras.io/visualization/) to plot model graphs).
 
-- TensorFlow
-    - [See installation instructions](https://www.tensorflow.org/install/).
+Then, you can install Keras itself. There are two ways to install Keras:
 
-*When using the Theano backend:*
+- **Install Keras from PyPI (recommended):**
 
-- Theano
-    - [See installation instructions](http://deeplearning.net/software/theano/install.html#install).
-
-To install Keras, `cd` to the Keras folder and run the install command:
-```sh
-sudo python setup.py install
-```
-
-You can also install Keras from PyPI:
 ```sh
 sudo pip install keras
+```
+
+If you are using a virtualenv, you may want to avoid using sudo:
+
+```sh
+pip install keras
+```
+
+- **Alternatively: install Keras from the Github source:**
+
+First, clone Keras using `git`:
+
+```sh
+git clone https://github.com/fchollet/keras.git
+```
+
+ Then, `cd` to the Keras folder and run the install command:
+```sh
+cd keras
+sudo python setup.py install
 ```
 
 ------------------
 
 
-## Switching from TensorFlow to Theano
+## Switching from TensorFlow to CNTK or Theano
 
 By default, Keras will use TensorFlow as its tensor manipulation library. [Follow these instructions](http://keras.io/backend/) to configure the Keras backend.
 
