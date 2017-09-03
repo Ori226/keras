@@ -957,7 +957,8 @@ class Model(Container):
                 with K.name_scope(self.optimizer.__class__.__name__):
                     training_updates = self.optimizer.get_updates(
                         params=self._collected_trainable_weights,
-                        loss=self.total_loss)
+                        loss=self.total_loss,
+                        learning_rates=self.learning_rates)
                 updates = self.updates + training_updates
                 # Gets loss and metrics. Updates weights at each call.
                 self.train_function = K.function(inputs,

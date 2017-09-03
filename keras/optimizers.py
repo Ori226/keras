@@ -220,7 +220,7 @@ class RMSprop(Optimizer):
         self.initial_decay = decay
 
     @interfaces.legacy_get_updates_support
-    def get_updates(self, loss, params):
+    def get_updates(self, loss, params, **kwargs):
         grads = self.get_gradients(loss, params)
         accumulators = [K.zeros(K.int_shape(p), dtype=K.dtype(p)) for p in params]
         self.weights = accumulators
@@ -252,6 +252,34 @@ class RMSprop(Optimizer):
         base_config = super(RMSprop, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
+class MyRMSprop(RMSprop):
+    def get_updates(self, params, loss, learning_rates,**kwargs):
+        grads = self.get_gradients(loss, params)
+        shapes = [K.get_variable_shape(p) for p in params]
+        accumulators = [K.zeros(shape) for shape in shapes]
+        self.weights = accumulators
+        self.updates = []
+
+        lr = self.lr
+        if self.initial_decay > 0:
+            lr *= (1. / (1. + self.decay * self.iterations))
+            self.updates.append(K.update_add(self.iterations, 1))
+
+        for p, g, a,mlr in zip(params, grads, accumulators, learning_rates):
+            # update accumulator
+            new_a = self.rho * a + (1. - self.rho) * K.square(g)
+            self.updates.append(K.update(a, new_a))
+            if mlr is None:
+                actual_mlr = 1.0
+            else:
+                actual_mlr = mlr
+            new_p = p - actual_mlr*lr * g / (K.sqrt(new_a) + self.epsilon)
+
+            # Apply constraints.
+            if getattr(p, 'constraint', None) is not None:
+                new_p = p.constraint(new_p)
+            self.updates.append(K.update(p, new_p))
+        return self.updates
 
 class Adagrad(Optimizer):
     """Adagrad optimizer.
