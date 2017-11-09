@@ -38,12 +38,12 @@ model.add(Dense(512, activation='relu', input_shape=(784,)))
 model.add(Dropout(0.2))
 model.add(Dense(512, activation='relu'))
 model.add(Dropout(0.2))
-model.add(Dense(10, activation='softmax', learning_rate=2))
+model.add(Dense(10, activation='softmax'))
 
 model.summary()
 
 model.compile(loss='categorical_crossentropy',
-              optimizer=MyRMSprop(),
+              optimizer=RMSprop(),
               metrics=['accuracy'])
 
 history = model.fit(x_train, y_train,
